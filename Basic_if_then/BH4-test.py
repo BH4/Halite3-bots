@@ -70,20 +70,20 @@ def closest_drop(ship, me, game_map):
 ###############################################################################
 # Decision functions
 ###############################################################################
-def i_should_make_a_dropoff(dist, game, ship):
+def dropoff_checklist(dist, game, ship):
     me = game.me
     game_map = game.game_map
 
     too_far = dist > large_distance_from_drop
     sufficent_num_ships = len(me.get_ships()) > 1
-    sufficient_halite_to_build = (me.halite_amount > constants.DROPOFF_COST-game_map[ship.position].halite_amount)
+    sufficient_halite_to_build = (me.halite_amount > constants.DROPOFF_COST-game_map[ship.position].halite_amount-ship.halite_amount)
     not_end_game = game.turn_number < turn_to_stop_spending
 
     return (too_far and sufficent_num_ships and
             sufficient_halite_to_build and not_end_game)
 
 
-def i_should_spawn_ship(game, occupied):
+def ship_spawn_checklist(game, occupied):
     me = game.me
 
     not_end_game = game.turn_number < turn_to_stop_spending
@@ -143,7 +143,7 @@ while True:
         if ship_status[ship.id] == "returning":
             closest, dist = closest_drop(ship, me, game_map)
 
-            if i_should_make_a_dropoff(dist, game, ship):
+            if dropoff_checklist(dist, game, ship):
                 command_queue.append(ship.make_dropoff())
 
                 logging.info("Ship {} decided to make a dropoff.".format(ship.id))
@@ -166,7 +166,7 @@ while True:
 
     # If you're on the first turn and have enough halite, spawn a ship.
     # Don't spawn a ship if you currently have a ship at port, though.
-    if i_should_spawn_ship(game, occupied):
+    if ship_spawn_checklist(game, occupied):
         command_queue.append(game.me.shipyard.spawn())
 
     # Send your moves back to the game environment, ending this turn.
