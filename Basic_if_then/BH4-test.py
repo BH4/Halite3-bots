@@ -64,8 +64,8 @@ def halite_density(game_map):
     return stored_density
 
 
-def closest_dense_spot(ship, game_map, n=1):
-    """From the 10 most dense regions choose the closest"""
+def closest_dense_spot(ship, game_map, n=3):
+    """From the n most dense regions choose closest"""
     density = halite_density(game_map)
     ind = []
     dval = []
@@ -93,6 +93,28 @@ def closest_drop(ship, me, game_map):
             closest = drop.position
 
     return closest, dist
+
+
+def get_safe_spaces_in_region(ship, game_map, search_region=1):
+    curr_pos = ship.position
+
+    safe_spaces = []
+    for i in range(-1*search_region, search_region+1):
+        for j in range(-1*search_region, search_region+1):
+            if not (i == 0 and j == 0):
+                test = curr_pos + Position(i, j)
+                if not game_map[test].is_occupied:
+                    safe_spaces.append(test)
+
+    return safe_spaces
+
+
+def get_safe_cardinals(ship, game_map):
+    curr_pos = ship.position
+
+    safe_spaces = [x for x in curr_pos.get_surrounding_cardinals() if not game_map[x].is_occupied]
+
+    return safe_spaces
 
 
 ###############################################################################
@@ -145,36 +167,33 @@ def returning_move(ship, game_map, closest):
     return move
 
 
-def smart_explore(ship, game_map):
+def smart_explore(ship, game_map, search_region=1):
     curr_pos = ship.position
 
     move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO
 
     move = Direction.Still
     new_pos = curr_pos
-
-    closest, dist = closest_dense_spot(ship, game_map)
     if ship.halite_amount >= move_cost:
-        move = game_map.naive_navigate(ship, closest)
+        # safe_spaces = get_safe_spaces_in_region(ship, game_map, search_region=search_region)
+        safe_spaces = get_safe_cardinals(ship, game_map)
+        if len(safe_spaces) == 0:
+            return (0, 0)
+
+        h_amount = [game_map[x].halite_amount for x in safe_spaces]
+        h_amount, safe_spaces = list(zip(*sorted(zip(h_amount, safe_spaces), key=lambda x: x[0], reverse=True)))
+
+        move = game_map.naive_navigate(ship, safe_spaces[0])
         new_pos = curr_pos+Position(move[0], move[1])
 
-        """
-        if new_pos in occupied:
-            move = Direction.Still
-            new_pos = curr_pos
-            new_pos = game_map.normalize(new_pos)
-        """
-
-    # game_map[new_pos].mark_unsafe(ship)
-    if move == Direction.Still:
-        move = random_move(ship, game_map)
+    game_map[new_pos].mark_unsafe(ship)
     return move
 
 
 ###############################################################################
 # Decision functions
 ###############################################################################
-def dropoff_checklist(dist, game, ship):
+def dropoff_checklist(dist, game, ship, ship_status):
     me = game.me
     game_map = game.game_map
 
@@ -187,9 +206,11 @@ def dropoff_checklist(dist, game, ship):
     sufficient_halite_to_build = (me.halite_amount > real_dropoff_cost)
 
     not_end_game = game.turn_number < turn_to_stop_spending
+    only_one_dropoff_at_a_time = "dropoff" not in ship_status
 
     return (too_far and sufficent_num_ships and
-            sufficient_halite_to_build and not_end_game)
+            sufficient_halite_to_build and not_end_game
+            and only_one_dropoff_at_a_time)
 
 
 def ship_spawn_checklist(game):
@@ -254,8 +275,9 @@ while True:
         if ship_status[ship.id] == "returning":
             closest, dist = closest_drop(ship, me, game_map)
 
-            if dropoff_checklist(dist, game, ship):
+            if dropoff_checklist(dist, game, ship, ship_status):
                 command_queue.append(ship.make_dropoff())
+                ship_status[ship.id] = "dropoff"
 
                 logging.info("Ship {} decided to make a dropoff.".format(ship.id))
             else:
