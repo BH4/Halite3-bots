@@ -218,7 +218,14 @@ def ship_spawn_checklist(game):
     game_map = game.game_map
 
     not_end_game = game.turn_number < turn_to_stop_spending
-    sufficient_halite_to_build = me.halite_amount >= constants.SHIP_COST
+
+    if "dropoff" in ship_status:
+        sufficient_halite_to_build = (me.halite_amount >=
+                                      constants.SHIP_COST
+                                      + constants.DROPOFF_COST)
+    else:
+        sufficient_halite_to_build = me.halite_amount >= constants.SHIP_COST
+
     not_busy = not game_map[me.shipyard].is_occupied
     need_ships = len(me.get_ships()) < max_ships
     lots_of_halite = (me.halite_amount >
@@ -298,7 +305,7 @@ while True:
 
     # If you're on the first turn and have enough halite, spawn a ship.
     # Don't spawn a ship if you currently have a ship at port, though.
-    if ship_spawn_checklist(game):
+    if ship_spawn_checklist(game, ship_status):
         command_queue.append(game.me.shipyard.spawn())
 
     # Reset turn based variables
