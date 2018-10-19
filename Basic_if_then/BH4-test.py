@@ -213,7 +213,7 @@ def dropoff_checklist(dist, game, ship, ship_status):
             and only_one_dropoff_at_a_time)
 
 
-def ship_spawn_checklist(game):
+def ship_spawn_checklist(game, ship_status):
     me = game.me
     game_map = game.game_map
 
@@ -250,66 +250,67 @@ minimum_useful_halite = constants.MAX_HALITE/10
 sufficient_halite_for_droping = constants.MAX_HALITE/4
 density_kernal_side_length = 3
 
-game.ready("BH4-test")
+if __name__ == "__main__":
+    game.ready("BH4-test")
 
-logging.info("Successfully created bot! Player ID is {}.".format(game.my_id))
+    logging.info("Successfully created bot! Player ID is {}.".format(game.my_id))
 
-# Game Loop
-while True:
-    game.update_frame()
+    # Game Loop
+    while True:
+        game.update_frame()
 
-    me = game.me
-    game_map = game.game_map
+        me = game.me
+        game_map = game.game_map
 
-    # A command queue holds all the commands you will run this turn.
-    command_queue = []
-    for ship in me.get_ships():
-        game_map[ship.position].mark_unsafe(ship)
+        # A command queue holds all the commands you will run this turn.
+        command_queue = []
+        for ship in me.get_ships():
+            game_map[ship.position].mark_unsafe(ship)
 
-    for ship in me.get_ships():
-        # Mark status
-        if ship.id not in ship_status:
-            ship_status[ship.id] = "exploring"
-
-        if ship_status[ship.id] == "returning":
-            closest, dist = closest_drop(ship, me, game_map)
-            if dist == 0:
+        for ship in me.get_ships():
+            # Mark status
+            if ship.id not in ship_status:
                 ship_status[ship.id] = "exploring"
-        elif ship.halite_amount >= sufficient_halite_for_droping:
-            ship_status[ship.id] = "returning"
 
-        # Take action
-        if ship_status[ship.id] == "returning":
-            closest, dist = closest_drop(ship, me, game_map)
+            if ship_status[ship.id] == "returning":
+                closest, dist = closest_drop(ship, me, game_map)
+                if dist == 0:
+                    ship_status[ship.id] = "exploring"
+            elif ship.halite_amount >= sufficient_halite_for_droping:
+                ship_status[ship.id] = "returning"
 
-            if dropoff_checklist(dist, game, ship, ship_status):
-                command_queue.append(ship.make_dropoff())
-                ship_status[ship.id] = "dropoff"
+            # Take action
+            if ship_status[ship.id] == "returning":
+                closest, dist = closest_drop(ship, me, game_map)
 
-                logging.info("Ship {} decided to make a dropoff.".format(ship.id))
-            else:
-                move = returning_move(ship, game_map, closest)
-                command_queue.append(ship.move(move))
+                if dropoff_checklist(dist, game, ship, ship_status):
+                    command_queue.append(ship.make_dropoff())
+                    ship_status[ship.id] = "dropoff"
 
-                logging.info("Ship {} is returning by moving {}.".format(ship.id, move))
-        elif ship_status[ship.id] == "exploring":
-            if game_map[ship.position].halite_amount < minimum_useful_halite:
-                move = smart_explore(ship, game_map)
-                command_queue.append(ship.move(move))
+                    logging.info("Ship {} decided to make a dropoff.".format(ship.id))
+                else:
+                    move = returning_move(ship, game_map, closest)
+                    command_queue.append(ship.move(move))
 
-                logging.info("Ship {} is exploring by moving {}.".format(ship.id, move))
-            else:
-                command_queue.append(ship.stay_still())
+                    logging.info("Ship {} is returning by moving {}.".format(ship.id, move))
+            elif ship_status[ship.id] == "exploring":
+                if game_map[ship.position].halite_amount < minimum_useful_halite:
+                    move = smart_explore(ship, game_map)
+                    command_queue.append(ship.move(move))
 
-                logging.info("Ship {} is collecting by staying still.".format(ship.id))
+                    logging.info("Ship {} is exploring by moving {}.".format(ship.id, move))
+                else:
+                    command_queue.append(ship.stay_still())
 
-    # If you're on the first turn and have enough halite, spawn a ship.
-    # Don't spawn a ship if you currently have a ship at port, though.
-    if ship_spawn_checklist(game, ship_status):
-        command_queue.append(game.me.shipyard.spawn())
+                    logging.info("Ship {} is collecting by staying still.".format(ship.id))
 
-    # Reset turn based variables
-    stored_density = None
+        # If you're on the first turn and have enough halite, spawn a ship.
+        # Don't spawn a ship if you currently have a ship at port, though.
+        if ship_spawn_checklist(game, ship_status):
+            command_queue.append(game.me.shipyard.spawn())
 
-    # Send your moves back to the game environment, ending this turn.
-    game.end_turn(command_queue)
+        # Reset turn based variables
+        stored_density = None
+
+        # Send your moves back to the game environment, ending this turn.
+        game.end_turn(command_queue)
