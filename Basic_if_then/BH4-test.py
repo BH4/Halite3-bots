@@ -288,6 +288,7 @@ if __name__ == "__main__":
                     ship_status[ship.id] = "dropoff"
 
                     logging.info("Ship {} decided to make a dropoff.".format(ship.id))
+                    logging.info("output ship statuses to make sure only one is making dropoff: " + str(ship_status))
                 else:
                     move = returning_move(ship, game_map, closest)
                     command_queue.append(ship.move(move))
