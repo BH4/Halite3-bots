@@ -8,7 +8,6 @@ import random
 import logging
 
 
-
 ###############################################################################
 # Helper functions
 ###############################################################################
@@ -99,7 +98,7 @@ def closest_drop(ship, me, game_map):
 ###############################################################################
 # Movement functions
 ###############################################################################
-def random_move(ship, game_map, occupied):
+def random_move(ship, game_map):
     curr_pos = ship.position
 
     move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO
@@ -110,9 +109,8 @@ def random_move(ship, game_map, occupied):
         allowed = Direction.get_all_cardinals()
         move = random.choice(allowed)
         new_pos = curr_pos+Position(move[0], move[1])
-        new_pos = game_map.normalize(new_pos)
 
-        while new_pos in occupied and len(allowed) > 0:
+        while game_map[new_pos].is_occupied and len(allowed) > 0:
             allowed.remove(move)
 
             if len(allowed) > 0:
@@ -121,13 +119,12 @@ def random_move(ship, game_map, occupied):
             else:
                 move = (0, 0)
                 new_pos = curr_pos
-            new_pos = game_map.normalize(new_pos)
 
-    occupied.append(game_map.normalize(new_pos))
-    return move, occupied
+    game_map[new_pos].mark_unsafe(ship)
+    return move
 
 
-def returning_move(ship, game_map, occupied, closest):
+def returning_move(ship, game_map, closest):
     curr_pos = ship.position
 
     move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO
@@ -137,18 +134,18 @@ def returning_move(ship, game_map, occupied, closest):
     if ship.halite_amount >= move_cost:
         move = game_map.naive_navigate(ship, closest)
         new_pos = curr_pos+Position(move[0], move[1])
-        new_pos = game_map.normalize(new_pos)
 
-        if new_pos in occupied:
+        """
+        if game_map[new_pos].is_occupied:
             move = Direction.Still
             new_pos = curr_pos
-            new_pos = game_map.normalize(new_pos)
+        """
 
-    occupied.append(game_map.normalize(new_pos))
-    return move, occupied
+    game_map[new_pos].mark_unsafe(ship)
+    return move
 
 
-def smart_explore(ship, game_map, occupied):
+def smart_explore(ship, game_map):
     curr_pos = ship.position
 
     move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO
@@ -160,15 +157,18 @@ def smart_explore(ship, game_map, occupied):
     if ship.halite_amount >= move_cost:
         move = game_map.naive_navigate(ship, closest)
         new_pos = curr_pos+Position(move[0], move[1])
-        new_pos = game_map.normalize(new_pos)
 
+        """
         if new_pos in occupied:
             move = Direction.Still
             new_pos = curr_pos
             new_pos = game_map.normalize(new_pos)
+        """
 
-    occupied.append(game_map.normalize(new_pos))
-    return move, occupied
+    # game_map[new_pos].mark_unsafe(ship)
+    if move == Direction.Still:
+        move = random_move(ship, game_map)
+    return move
 
 
 ###############################################################################
@@ -192,12 +192,13 @@ def dropoff_checklist(dist, game, ship):
             sufficient_halite_to_build and not_end_game)
 
 
-def ship_spawn_checklist(game, occupied):
+def ship_spawn_checklist(game):
     me = game.me
+    game_map = game.game_map
 
     not_end_game = game.turn_number < turn_to_stop_spending
     sufficient_halite_to_build = me.halite_amount >= constants.SHIP_COST
-    not_busy = me.shipyard.position not in occupied
+    not_busy = not game_map[me.shipyard].is_occupied
     need_ships = len(me.get_ships()) < max_ships
     lots_of_halite = (me.halite_amount >
                       constants.DROPOFF_COST+constants.SHIP_COST)
@@ -234,7 +235,8 @@ while True:
 
     # A command queue holds all the commands you will run this turn.
     command_queue = []
-    occupied = [x.position for x in me.get_ships()]
+    for ship in me.get_ships():
+        game_map[ship.position].mark_unsafe(ship)
 
     for ship in me.get_ships():
         # Mark status
@@ -257,25 +259,24 @@ while True:
 
                 logging.info("Ship {} decided to make a dropoff.".format(ship.id))
             else:
-                move, occupied = returning_move(ship, game_map, occupied, closest)
+                move = returning_move(ship, game_map, closest)
                 command_queue.append(ship.move(move))
 
                 logging.info("Ship {} is returning by moving {}.".format(ship.id, move))
         elif ship_status[ship.id] == "exploring":
             if game_map[ship.position].halite_amount < minimum_useful_halite:
-                move, occupied = random_move(ship, game_map, occupied)
+                move = smart_explore(ship, game_map)
                 command_queue.append(ship.move(move))
 
                 logging.info("Ship {} is exploring by moving {}.".format(ship.id, move))
             else:
-                occupied.append(ship.position)
                 command_queue.append(ship.stay_still())
 
                 logging.info("Ship {} is collecting by staying still.".format(ship.id))
 
     # If you're on the first turn and have enough halite, spawn a ship.
     # Don't spawn a ship if you currently have a ship at port, though.
-    if ship_spawn_checklist(game, occupied):
+    if ship_spawn_checklist(game):
         command_queue.append(game.me.shipyard.spawn())
 
     # Reset turn based variables
