@@ -65,7 +65,7 @@ def halite_density(game_map):
     return stored_density
 
 
-def closest_dense_spot(ship, game_map, n=1):
+def closest_dense_spot(ship, game_map, n=10):
     """From the 10 most dense regions choose the closest"""
     density = halite_density(game_map)
     ind = []
@@ -75,12 +75,13 @@ def closest_dense_spot(ship, game_map, n=1):
             ind.append((i, j))
             dval.append(density[i][j])
 
-    dval, ind = list(zip(*sorted(zip(dval, ind), reverse=True)))
+    dval, ind = list(zip(*sorted(zip(dval, ind))))
 
-    pos = [Position(x[0], x[1]) for x in ind[:n]]
+    pos = ind[:n]
     dist = [game_map.calculate_distance(ship.position, x) for x in pos]
-    dist, pos = list(zip(*sorted(zip(dist, pos), key=lambda x: x[0])))
+    dist, pos = list(zip(*sorted(zip(dist, pos))))
 
+    pos = [Position(x[0], x[1]) for x in pos]
     return pos[0], dist[0]
 
 
@@ -156,7 +157,7 @@ def smart_explore(ship, game_map, occupied):
     move = Direction.Still
     new_pos = curr_pos
 
-    closest, dist = closest_dense_spot(ship, game_map)
+    closest = closest_dense_spot(ship, game_map)
     if ship.halite_amount >= move_cost:
         move = game_map.naive_navigate(ship, closest)
         new_pos = curr_pos+Position(move[0], move[1])
@@ -219,7 +220,7 @@ turn_to_stop_spending = 300
 large_distance_from_drop = 10
 minimum_useful_halite = constants.MAX_HALITE/10
 sufficient_halite_for_droping = constants.MAX_HALITE/4
-density_kernal_side_length = 3
+density_kernal_side_length = 5
 
 game.ready("BH4-test")
 
