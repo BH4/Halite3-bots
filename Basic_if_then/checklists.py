@@ -16,7 +16,7 @@ def dropoff_checklist(dist, game, ship, ship_status, params):
     sufficient_halite_to_build = (me.halite_amount > real_dropoff_cost)
 
     not_end_game = game.turn_number < params.turn_to_stop_spending
-    only_one_dropoff_at_a_time = "dropoff" not in ship_status
+    only_one_dropoff_at_a_time = "dropoff" not in ship_status.values()
 
     return (too_far and sufficent_num_ships and
             sufficient_halite_to_build and not_end_game
