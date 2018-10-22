@@ -18,9 +18,12 @@ def dropoff_checklist(dist, game, ship, ship_status, params):
     not_end_game = game.turn_number < params.turn_to_stop_spending
     only_one_dropoff_at_a_time = "dropoff" not in ship_status.values()
 
+    not_enough_dropoffs = len(me.get_dropoffs()) < params.max_dropoffs
+
     return (too_far and sufficent_num_ships and
             sufficient_halite_to_build and not_end_game
-            and only_one_dropoff_at_a_time)
+            and only_one_dropoff_at_a_time
+            and not_enough_dropoffs)
 
 
 def ship_spawn_checklist(game, ship_status, params):

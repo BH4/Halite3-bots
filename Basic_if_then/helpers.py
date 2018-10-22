@@ -102,9 +102,7 @@ def get_safe_spaces_in_region(ship, game_map, search_region=1):
     return safe_spaces
 
 
-def get_safe_cardinals(ship, game_map):
-    curr_pos = ship.position
-
+def get_safe_cardinals(curr_pos, game_map):
     safe_spaces = [x for x in curr_pos.get_surrounding_cardinals() if not game_map[x].is_occupied]
 
     return safe_spaces
