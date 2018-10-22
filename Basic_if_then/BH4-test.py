@@ -21,7 +21,7 @@ class parameters():
         self.sufficient_halite_for_droping = constants.MAX_HALITE/4
         self.density_kernal_side_length = 3
 
-        self.turn_to_stop_spending = 10000
+        self.turn_to_stop_spending = 300
         self.max_dropoffs = 1
 
 

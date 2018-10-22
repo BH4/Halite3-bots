@@ -44,5 +44,15 @@ def ship_spawn_checklist(game, ship_status, params):
     lots_of_halite = (me.halite_amount >
                       constants.DROPOFF_COST+constants.SHIP_COST)
 
+    not_blocking = True
+    for ship in me.get_ships():
+        this_ship_is_returning = ship_status[ship.id] == "retuning"
+
+        this_ship_is_close = game_map.calculate_distance(ship.position, me.shipyard.position) < 1
+
+        if this_ship_is_close and this_ship_is_returning:
+            not_blocking = False
+            break
+
     return (not_end_game and sufficient_halite_to_build and not_busy and
-            (need_ships or lots_of_halite))
+            not_blocking and (need_ships or lots_of_halite))
