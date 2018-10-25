@@ -11,30 +11,30 @@ def toroidal_value_sum(matrix, square_side_length):
     s = square_side_length//2
     """Convolution on a torus"""
     values = []
-    for j in range(h):
-        row = []
-        col_sums = []
-        for i in range(w):
+    for i in range(w):
+        col = []
+        row_sums = []
+        for j in range(h):
             curr = 0
-            if len(col_sums) == 0:
+            if len(row_sums) == 0:
                 for ii in range(-s, s+1):
                     cs = 0
                     for jj in range(-s, s+1):
                         cs += matrix[(i+ii) % w][(j+jj) % h]
                     curr += cs
-                    col_sums.append(cs)
+                    row_sums.append(cs)
             else:
-                v = col_sums.pop(0)
-                curr = row[-1]-v
+                v = row_sums.pop(0)
+                curr = col[-1]-v
                 ii = s
                 cs = 0
                 for jj in range(-s, s+1):
                     cs += matrix[(i+ii) % w][(j+jj) % h]
                 curr += cs
-                col_sums.append(cs)
+                row_sums.append(cs)
 
-            row.append(curr)
-        values.append(row)
+            col.append(curr)
+        values.append(col)
     return np.array(values)
 
 
@@ -53,6 +53,10 @@ def halite_density(game_map, params):
 
         all_halite.append(col)
 
+    logging.info(all_halite[8][31])
+    logging.info(all_halite[31][8])
+    logging.info(game_map[Position(8, 31)].halite_amount)
+    logging.info(game_map[Position(31, 8)].halite_amount)
     stored_density = toroidal_value_sum(all_halite, params.density_kernal_side_length)
     return stored_density
 
@@ -76,14 +80,42 @@ def closest_dense_spot(ship, game_map, params, n=3):
     return pos[0], dist[0]
 
 
-def closest_drop(ship, me, game_map):
+def dense_spots(game_map, params):
+    density = halite_density(game_map, params)
+    ind = []
+    dval = []
+    for i in range(len(density)):
+        for j in range(len(density[0])):
+            ind.append((i, j))
+            dval.append(density[i][j])
+
+    dval, ind = list(zip(*sorted(zip(dval, ind), reverse=True)))
+    pos = [Position(x[0], x[1]) for x in ind]
+
+    return pos, dval
+
+
+def closest_drop(position, me, game_map):
     closest = me.shipyard.position
-    dist = game_map.calculate_distance(ship.position, me.shipyard.position)
+    dist = game_map.calculate_distance(position, me.shipyard.position)
     for drop in me.get_dropoffs():
-        dist_temp = game_map.calculate_distance(ship.position, drop.position)
+        dist_temp = game_map.calculate_distance(position, drop.position)
         if dist_temp < dist:
             dist = dist_temp
             closest = drop.position
+
+    return closest, dist
+
+
+# Return id of closest ship to this position
+def closest_ship(position, me, game_map):
+    closest = -1
+    dist = 10**5
+    for ship in me.get_ships():
+        dist_temp = game_map.calculate_distance(position, ship.position)
+        if dist_temp < dist:
+            dist = dist_temp
+            closest = ship.id
 
     return closest, dist
 
