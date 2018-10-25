@@ -1,4 +1,5 @@
 from hlt.positionals import Position
+from hlt import constants
 
 import logging
 
@@ -47,8 +48,9 @@ def expand(game, ship_status, ship_destination, params):
         if ship_status[ship.id] == "returning" and dist == 0:
             ship_status[ship.id] = "exploring"
         elif ship_status[ship.id] == "exploring":
-            if(ship.halite_amount >= params.sufficient_halite_for_droping and
-               ship.halite_amount > game_map[ship.position].halite_amount):
+            if((ship.halite_amount >= params.sufficient_halite_for_droping and
+               ship.halite_amount > game_map[ship.position].halite_amount) or
+               constants.MAX_HALITE-ship.halite_amount < game_map[ship.position].halite_amount/constants.EXTRACT_RATIO):
                 ship_status[ship.id] = "returning"
 
         #######################################################################
