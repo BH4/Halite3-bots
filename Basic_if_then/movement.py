@@ -1,4 +1,4 @@
-from hlt.positionals import Position
+from hlt.positionals import Position, Direction
 from hlt import constants
 
 import random
@@ -8,7 +8,7 @@ import logging
 import helpers
 
 
-def navigate(ship, destination, game_map):
+def navigate_old(ship, destination, game_map):
     curr_pos = ship.position
 
     move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO
@@ -20,6 +20,194 @@ def navigate(ship, destination, game_map):
         game_map[new_pos].mark_unsafe(ship)
         return move
     return (0, 0)
+
+
+def navigate(game_map, ship, destination):
+    destination = game_map.normalize(destination)
+
+    logging.info("destination normalized")
+
+    w = game_map.width
+    h = game_map.height
+    curr_pos = ship.position
+
+    move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO
+    if ship.halite_amount < move_cost:
+        # If the ship doesn't have enough halite on board to move
+        # Then it MUST stay still. No other action is possible.
+        logging.info("navigate: Ship {} decided there isn't enough halite to move.".format(ship.id))
+        return [(0, 0)]
+
+    logging.info("navigate: Ship {} decided there is enough halite to move.".format(ship.id))
+    possible_moves = []
+    dy = destination.y - curr_pos.y
+    if dy > w//2:
+        dy -= w
+    elif dy < -w//2:
+        dy += w
+
+    dx = destination.x - curr_pos.x
+    if dx > w//2:
+        dx -= w
+    elif dx < -w//2:
+        dx += w
+
+    logging.info("navigate: Ship {} says dx={} and dy={}.".format(ship.id, dx, dy))
+
+    h_amount = {x: game_map[curr_pos+Position(*x)].halite_amount
+                for x in Direction.get_all_cardinals()}
+
+    logging.info("navigate: Ship {} got halite amount at adjacent positions.".format(ship.id))
+
+    # Possible moves sorted by preference only taking into account distance
+    if abs(dy) > abs(dx):
+        logging.info("navigate: Ship {} wants vertical move.".format(ship.id))
+        y_sign = dy//abs(dy)
+
+        possible_moves.append((0, y_sign))  # dy>0
+        if dx == 0:
+            logging.info("test1")
+            possible_moves.append((0, 0))
+            if h_amount[(1, 0)] <= h_amount[(-1, 0)]:
+                logging.info("test2")
+                possible_moves.append((1, 0))
+                possible_moves.append((-1, 0))
+            else:
+                logging.info("test3")
+                possible_moves.append((-1, 0))
+                possible_moves.append((1, 0))
+            possible_moves.append((0, -1*y_sign))
+        else:
+            logging.info("test4")
+            x_sign = dx//abs(dx)
+
+            possible_moves.append((x_sign, 0))
+            possible_moves.append((0, 0))
+            possible_moves.append((-1*x_sign, 0))
+            possible_moves.append((0, -1*y_sign))
+
+            # Take halite amount into consideration for preference
+            # (weather or not to flip the first two and same but independent of the last two)
+            # currently ignored
+    elif abs(dy) < abs(dx) or (abs(dy) == abs(dx) and dy != 0):
+        logging.info("navigate: Ship {} wants horizontal move.".format(ship.id))
+        x_sign = dx//abs(dx)
+
+        possible_moves.append((x_sign, 0))  # dy>0
+        if dy == 0:
+            logging.info("test1")
+            possible_moves.append((0, 0))
+            if h_amount[(0, 1)] <= h_amount[(0, -1)]:
+                logging.info("test2")
+                possible_moves.append((0, 1))
+                possible_moves.append((0, -1))
+            else:
+                logging.info("test3")
+                possible_moves.append((0, -1))
+                possible_moves.append((0, 1))
+            possible_moves.append((-1*x_sign, 0))
+        else:
+            logging.info("test4")
+            y_sign = dy//abs(dy)
+
+            possible_moves.append((y_sign, 0))
+            possible_moves.append((0, 0))
+            possible_moves.append((-1*y_sign, 0))
+            possible_moves.append((0, -1*x_sign))
+
+            # Take halite amount into consideration for preference
+            # (weather or not to flip the first two and same but independent of the last two)
+            # currently ignored
+    else:
+        # This ship doesn't want to move
+        logging.info("navigate: Ship {} doesn't want to move.".format(ship.id))
+        a = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        random.shuffle(a)
+        possible_moves = [(0, 0)] + a
+
+    logging.info("navigate: Ship {} got possible_moves.".format(ship.id))
+    return possible_moves
+
+
+def group_navigate(game, ship_status, ship_destination):
+    me = game.me
+    game_map = game.game_map
+
+    # Can't navigate with no ships.
+    if len(me.get_ships()) == 0:
+        return {}
+
+    logging.info("group_navigate: There is more than zero ships.")
+
+    # List all moves for each ship
+    move_list = {ship.id: navigate(game_map, ship, ship_destination[ship.id]) for ship in me.get_ships()}
+
+    logging.info("group_navigate: Got moves.")
+    priority_list = {}
+
+    # Ship priorities will follow distances from current destination.
+    # Ships making a dropoff have highest priority.
+    sorted_ship_list = []
+    dist_list = []
+    for ship in me.get_ships():
+        sorted_ship_list.append(ship)
+        if ship.id in ship_destination and ship_status[ship.id] != "returning":
+            dist_list.append(game_map.calculate_distance(ship.position, ship_destination[ship.id]))
+        elif ship_status[ship.id] == "dropoff":
+            dist_list.append(-1)
+        else:
+            dist_list.append(0)
+
+    z = zip(dist_list, sorted_ship_list)
+    sz = sorted(z, key=lambda x: x[0])
+    dist_list, sorted_ship_list = list(zip(*sz))
+
+    for i in range(len(sorted_ship_list)):
+        priority_list[sorted_ship_list[i].id] = i
+
+    logging.info("group_navigate: Made priority_list.")
+
+    return group_navigate_main(me.get_ships(), game_map, priority_list, move_list)
+
+
+def group_navigate_main(ship_list, game_map, priority_list, move_list):
+    logging.info("group_navigate_main: "+str(move_list))
+    conflicting_positions = set()
+
+    move_test = {x: move_list[x][0] for x in move_list.keys()}
+    position_test = {}
+    for ship in ship_list:
+        s = str(game_map.normalize(ship.position + Position(*move_list[ship.id][0])))
+        if s in position_test:
+            conflicting_positions.add(s)
+            position_test[s].append(ship.id)
+        else:
+            position_test[s] = [ship.id]
+
+    if len(conflicting_positions) == 0:
+        return move_test
+
+    new_move_list = {x: [y for y in move_list[x]] for x in move_list}
+    for s in conflicting_positions:
+        crashing_ships = position_test[s]
+        priorities = [priority_list[x] for x in crashing_ships]
+
+        # Allow one ship to move here but no more.
+        cant_move = [move_list[x] == [(0, 0)] for x in crashing_ships]
+        if any(cant_move):
+            ind = next(i for i, v in enumerate(cant_move) if v)
+        else:
+            mp = min(priorities)
+            ind = priorities.index(mp)
+        priorities.pop(ind)
+        crashing_ships.pop(ind)
+
+        # Keep the other crashing ships from moving here.
+        for i in range(len(priorities)):
+            shipid = crashing_ships[i]
+            new_move_list[shipid] = new_move_list[shipid][1:]
+
+    return group_navigate_main(ship_list, game_map, priority_list, new_move_list)
 
 
 def random_move(ship, game_map, params):
@@ -57,10 +245,14 @@ def smart_explore(ship, game_map, params, search_region=1):
 
     # Don't move if there is enough halite here
     if game_map[curr_pos].halite_amount < params.minimum_useful_halite:
+        logging.info("Ship {} decided there isn't enough halite here.".format(ship.id))
+
         move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO
 
         # Don't move if I can't pay for it
         if ship.halite_amount >= move_cost:
+            logging.info("Ship {} is able to pay for movement.".format(ship.id))
+
             # safe_spaces = get_safe_spaces_in_region(ship, game_map, search_region=search_region)
             safe_spaces = helpers.get_safe_cardinals(curr_pos, game_map)
 
@@ -70,5 +262,9 @@ def smart_explore(ship, game_map, params, search_region=1):
                 h_amount, safe_spaces = list(zip(*sorted(zip(h_amount, safe_spaces), key=lambda x: x[0], reverse=True)))
                 destination = safe_spaces[0]
                 return destination
+        else:
+            logging.info("Ship {} is NOT able to pay for movement.".format(ship.id))
+    else:
+        logging.info("Ship {} decided there is plenty of halite here.".format(ship.id))
 
     return curr_pos
