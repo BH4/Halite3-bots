@@ -120,6 +120,17 @@ def closest_ship(position, me, game_map):
     return closest, dist
 
 
+# Return ids of ships sorted from closest to farthest
+def sort_ships_by_distance(position, me, game_map):
+    id_list = [ship.id for ship in me.get_ships()]
+    dist_list = [game_map.calculate_distance(ship.position, position)
+                 for ship in me.get_ships()]
+
+    dist_list, id_list = list(zip(*sorted(zip(dist_list, id_list))))
+
+    return id_list, dist_list
+
+
 def get_safe_spaces_in_region(ship, game_map, search_region=1):
     curr_pos = ship.position
 

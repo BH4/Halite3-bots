@@ -229,7 +229,9 @@ def random_move(ship, game_map, params):
     return curr_pos
 
 
-def returning_move(ship, game_map, closest):
+def returning_move(ship, me, game_map):
+    closest, dist = helpers.closest_drop(ship.position, me, game_map)
+
     curr_pos = ship.position
 
     move_cost = game_map[curr_pos].halite_amount/constants.MOVE_COST_RATIO

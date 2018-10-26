@@ -47,8 +47,9 @@ def group_dropoff_decision(game, ship_status, params):
     pos, dvals = helpers.dense_spots(game_map, params)
 
     if max(dvals) < params.dense_requirement:
+        logging.info("not dense enough")
         # Nowhere is dense enough
-        return (None, None)
+        return ("stop", None)
 
     logging.info(pos)
     logging.info(dvals)
@@ -69,9 +70,9 @@ def group_dropoff_decision(game, ship_status, params):
         return ("stop", None)
 
     drop_location = pos[i]
-    drop_ship_id, travel_dist = helpers.closest_ship(drop_location, me, game_map)
+    ship_ids, travel_dist = helpers.sort_ships_by_distance(drop_location, me, game_map)
 
-    return drop_ship_id, drop_location
+    return ship_ids, drop_location
 
 
 def ship_spawn_checklist(game, ship_status, currently_occupied_positions, params):
