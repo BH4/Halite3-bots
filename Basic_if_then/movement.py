@@ -242,7 +242,7 @@ def returning_move(ship, me, game_map):
     return curr_pos
 
 
-def smart_explore(ship, game_map, params, search_region=1):
+def smart_explore(ship, game_map, params):
     curr_pos = ship.position
 
     # Don't move if there is enough halite here
@@ -255,7 +255,7 @@ def smart_explore(ship, game_map, params, search_region=1):
         if ship.halite_amount >= move_cost:
             logging.info("Ship {} is able to pay for movement.".format(ship.id))
 
-            spaces = helpers.get_spaces_in_region(ship, search_region=search_region)
+            spaces = helpers.get_spaces_in_region(ship, search_region=params.search_region)
             # spaces = curr_pos.get_surrounding_cardinals()
 
             # Don't set destination to be on top of another ship
@@ -271,6 +271,13 @@ def smart_explore(ship, game_map, params, search_region=1):
             # Don't move if nowhere else is safe
             if len(spaces) > 0:
                 h_amount = [game_map[x].halite_amount for x in spaces]
+                # If none of the spaces have enough halite then move to a
+                # better area
+                if max(h_amount) < params.minimum_useful_halite:
+                    pos, dist = helpers.closest_dense_spot(ship, game_map, params, n=params.number_of_dense_spots_to_check)
+                    return pos
+
+
                 h_amount, spaces = list(zip(*sorted(zip(h_amount, spaces), key=lambda x: x[0], reverse=True)))
                 destination = spaces[0]
                 return destination

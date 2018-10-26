@@ -24,6 +24,7 @@ class parameters():
         self.density_kernal_side_length = 3
 
         self.search_region = 1
+        self.number_of_dense_spots_to_check = 10
 
         # self.dense_requirement = self.minimum_useful_halite*self.density_kernal_side_length**2
         self.dense_requirement = constants.DROPOFF_COST
