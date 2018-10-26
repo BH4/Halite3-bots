@@ -131,21 +131,13 @@ def sort_ships_by_distance(position, me, game_map):
     return id_list, dist_list
 
 
-def get_safe_spaces_in_region(ship, game_map, search_region=1):
+def get_spaces_in_region(ship, search_region=1):
     curr_pos = ship.position
 
-    safe_spaces = []
+    spaces = []
     for i in range(-1*search_region, search_region+1):
         for j in range(-1*search_region, search_region+1):
             if not (i == 0 and j == 0):
-                test = curr_pos + Position(i, j)
-                if not game_map[test].is_occupied:
-                    safe_spaces.append(test)
+                spaces.append(curr_pos + Position(i, j))
 
-    return safe_spaces
-
-
-def get_safe_cardinals(curr_pos, game_map):
-    safe_spaces = [x for x in curr_pos.get_surrounding_cardinals() if not game_map[x].is_occupied]
-
-    return safe_spaces
+    return spaces

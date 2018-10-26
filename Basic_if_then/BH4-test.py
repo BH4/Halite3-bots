@@ -38,7 +38,6 @@ params = parameters()
 game.ready("BH4-test")
 
 logging.info("Successfully created bot! Player ID is {}.".format(game.my_id))
-logging.info("constants.EXTRACT_RATIO: {}.".format(constants.EXTRACT_RATIO))
 
 # Game Loop
 while True:

@@ -219,11 +219,11 @@ def random_move(ship, game_map, params):
 
         # Don't move if I can't pay for it
         if ship.halite_amount >= move_cost:
-            allowed = helpers.get_safe_cardinals(curr_pos, game_map)
+            spaces = curr_pos.get_surrounding_cardinals()
 
             # Don't move if nowhere else is safe
-            if len(allowed) > 0:
-                new_pos = random.choice(allowed)
+            if len(spaces) > 0:
+                new_pos = random.choice(spaces)
                 return new_pos
 
     return curr_pos
@@ -255,14 +255,14 @@ def smart_explore(ship, game_map, params, search_region=1):
         if ship.halite_amount >= move_cost:
             logging.info("Ship {} is able to pay for movement.".format(ship.id))
 
-            # safe_spaces = get_safe_spaces_in_region(ship, game_map, search_region=search_region)
-            safe_spaces = helpers.get_safe_cardinals(curr_pos, game_map)
+            # spaces = get_spaces_in_region(ship, search_region=search_region)
+            spaces = curr_pos.get_surrounding_cardinals()
 
             # Don't move if nowhere else is safe
-            if len(safe_spaces) > 0:
-                h_amount = [game_map[x].halite_amount for x in safe_spaces]
-                h_amount, safe_spaces = list(zip(*sorted(zip(h_amount, safe_spaces), key=lambda x: x[0], reverse=True)))
-                destination = safe_spaces[0]
+            if len(spaces) > 0:
+                h_amount = [game_map[x].halite_amount for x in spaces]
+                h_amount, spaces = list(zip(*sorted(zip(h_amount, spaces), key=lambda x: x[0], reverse=True)))
+                destination = spaces[0]
                 return destination
         else:
             logging.info("Ship {} is NOT able to pay for movement.".format(ship.id))
