@@ -93,7 +93,7 @@ def navigate(game_map, ship, destination):
         logging.info("navigate: Ship {} wants horizontal move.".format(ship.id))
         x_sign = dx//abs(dx)
 
-        possible_moves.append((x_sign, 0))  # dy>0
+        possible_moves.append((x_sign, 0))  # dx>0
         if dy == 0:
             logging.info("test1")
             possible_moves.append((0, 0))
@@ -110,10 +110,10 @@ def navigate(game_map, ship, destination):
             logging.info("test4")
             y_sign = dy//abs(dy)
 
-            possible_moves.append((y_sign, 0))
+            possible_moves.append((0, y_sign))
             possible_moves.append((0, 0))
-            possible_moves.append((-1*y_sign, 0))
-            possible_moves.append((0, -1*x_sign))
+            possible_moves.append((0, -1*y_sign))
+            possible_moves.append((-1*x_sign, 0))
 
             # Take halite amount into consideration for preference
             # (weather or not to flip the first two and same but independent of the last two)
@@ -255,8 +255,18 @@ def smart_explore(ship, game_map, params, search_region=1):
         if ship.halite_amount >= move_cost:
             logging.info("Ship {} is able to pay for movement.".format(ship.id))
 
-            # spaces = get_spaces_in_region(ship, search_region=search_region)
-            spaces = curr_pos.get_surrounding_cardinals()
+            spaces = helpers.get_spaces_in_region(ship, search_region=search_region)
+            # spaces = curr_pos.get_surrounding_cardinals()
+
+            # Don't set destination to be on top of another ship
+            # unless it is necessary.
+            new_spaces = []
+            for p in spaces:
+                if not game_map[p].is_occupied:
+                    new_spaces.append(p)
+
+            if len(new_spaces) > 0:
+                spaces = new_spaces
 
             # Don't move if nowhere else is safe
             if len(spaces) > 0:

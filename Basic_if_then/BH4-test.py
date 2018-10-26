@@ -23,6 +23,8 @@ class parameters():
         self.sufficient_halite_for_droping = constants.MAX_HALITE/4
         self.density_kernal_side_length = 3
 
+        self.search_region = 1
+
         # self.dense_requirement = self.minimum_useful_halite*self.density_kernal_side_length**2
         self.dense_requirement = constants.DROPOFF_COST
 
