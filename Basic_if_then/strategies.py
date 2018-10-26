@@ -86,7 +86,9 @@ def expand(game, ship_status, ship_destination, params):
             ship_destination[ship.id] = destination
 
             logging.info("Ship {} is returning by moving {}.".format(ship.id, destination))
-        elif ship_status[ship.id] == "exploring" and dist == 0:
+        elif ship_status[ship.id] == "exploring":
+            # Exploring moves should recalculate the destination every turn in
+            # case the conditions change.
             destination = movement.smart_explore(ship, game_map, params)
             ship_destination[ship.id] = destination
 
