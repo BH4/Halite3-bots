@@ -48,8 +48,9 @@ while True:
     hd = helpers.halite_density(game.game_map, params)
 
     m = max([max(x) for x in hd])
+    # m <= constants.MAX_HALITE*params.density_kernal_side_length**2
 
-    if m > params.explore_dense_requirement:
+    if m > 0*params.explore_dense_requirement:
         strategies.expand(game, ship_status, ship_destination, params)
     else:
         logging.info("Started vacuum")

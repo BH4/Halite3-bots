@@ -269,6 +269,10 @@ def returning_move(ship, me, game_map):
 
 
 def smart_explore(ship, game_map, params):
+    if random.random() < .5:
+        logging.info("Randomly chose to vacuum.")
+        return vacuum_explore(ship, game_map, params)
+
     curr_pos = ship.position
 
     # Don't move if there is enough halite here
@@ -308,7 +312,6 @@ def smart_explore(ship, game_map, params):
                     if pos is None:  # default to other method if none found over threshold
                         pos, dist = helpers.closest_most_dense_spot(ship, game_map, params, n=params.number_of_dense_spots_to_check)
                     return pos
-
 
                 h_amount, spaces = list(zip(*sorted(zip(h_amount, spaces), key=lambda x: x[0], reverse=True)))
                 destination = spaces[0]
@@ -361,7 +364,6 @@ def vacuum_explore(ship, game_map, params):
                 if pos is None:  # default to other method if none found over threshold
                     pos, dist = helpers.closest_most_dense_spot(ship, game_map, params, n=params.number_of_dense_spots_to_check)
                 return pos
-
 
             h_amount, spaces = list(zip(*sorted(zip(h_amount, spaces), key=lambda x: x[0], reverse=True)))
             destination = spaces[0]
