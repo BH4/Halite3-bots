@@ -46,7 +46,7 @@ def group_dropoff_decision(game, ship_status, params):
 
     pos, dvals = helpers.dense_spots(game_map, params)
 
-    if max(dvals) < params.dense_requirement:
+    if max(dvals) < params.dropoff_dense_requirement:
         logging.info("not dense enough")
         # Nowhere is dense enough
         return ("stop", None)

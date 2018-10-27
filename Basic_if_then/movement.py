@@ -177,25 +177,34 @@ def group_navigate_main(ship_list, game_map, priority_list, move_list):
     move_test = {x: move_list[x][0] for x in move_list.keys()}
     position_test = {}
     for ship in ship_list:
-        s = str(game_map.normalize(ship.position + Position(*move_list[ship.id][0])))
+        s = str(game_map.normalize(ship.position + Position(*move_test[ship.id])))
         if s in position_test:
             conflicting_positions.add(s)
             position_test[s].append(ship.id)
         else:
             position_test[s] = [ship.id]
 
+    # Solution is acceptable
     if len(conflicting_positions) == 0:
         return move_test
 
+    # Conflict resolution
     new_move_list = {x: [y for y in move_list[x]] for x in move_list}
     for s in conflicting_positions:
         crashing_ships = position_test[s]
         priorities = [priority_list[x] for x in crashing_ships]
 
-        # Allow one ship to move here but no more.
-        cant_move = [move_list[x] == [(0, 0)] for x in crashing_ships]
-        if any(cant_move):
-            ind = next(i for i, v in enumerate(cant_move) if v)
+        # Allow one ship to move to this position but no more.
+        # If there are any that don't have the ability to move at all
+        # (not enough halite) then they must be the one to remain in
+        # this position and all other ships that want to move here will
+        # have to go somewhere else. If there is more than one that can't
+        # move then there is no solution.
+        only_one_move = [i for i, x in enumerate(crashing_ships) if len(move_list[x]) == 1]
+        if len(only_one_move) == 1:
+            ind = only_one_move[0]
+        elif len(only_one_move) > 1:
+            return None  # There are no solutions
         else:
             mp = min(priorities)
             ind = priorities.index(mp)
