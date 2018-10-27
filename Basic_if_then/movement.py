@@ -269,9 +269,9 @@ def returning_move(ship, me, game_map):
 
 
 def smart_explore(ship, game_map, params):
-    if random.random() < .5:
-        logging.info("Randomly chose to vacuum.")
-        return vacuum_explore(ship, game_map, params)
+    #if random.random() < .5:
+    #    logging.info("Randomly chose to vacuum.")
+    #    return vacuum_explore(ship, game_map, params)
 
     curr_pos = ship.position
 

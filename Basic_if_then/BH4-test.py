@@ -21,7 +21,7 @@ class parameters():
         self.large_distance_from_drop = 10
         self.farthest_allowed_dropoff = game.game_map.width/2
         self.minimum_useful_halite = constants.MAX_HALITE/10
-        self.sufficient_halite_for_droping = constants.MAX_HALITE/4
+        self.sufficient_halite_for_droping = 3*constants.MAX_HALITE/4
         self.density_kernal_side_length = 3
 
         self.search_region = 1
