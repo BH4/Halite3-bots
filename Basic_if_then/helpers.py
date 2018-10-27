@@ -15,26 +15,28 @@ def toroidal_value_sum(matrix, square_side_length):
         col = []
         row_sums = []
         for j in range(h):
+
             curr = 0
             if len(row_sums) == 0:
-                for ii in range(-s, s+1):
-                    cs = 0
-                    for jj in range(-s, s+1):
-                        cs += matrix[(i+ii) % w][(j+jj) % h]
-                    curr += cs
-                    row_sums.append(cs)
+                for jj in range(-s, s+1):
+                    rs = 0
+                    for ii in range(-s, s+1):
+                        rs += matrix[(i+ii) % w][(j+jj) % h]
+                    curr += rs
+                    row_sums.append(rs)
             else:
                 v = row_sums.pop(0)
                 curr = col[-1]-v
-                ii = s
-                cs = 0
-                for jj in range(-s, s+1):
-                    cs += matrix[(i+ii) % w][(j+jj) % h]
-                curr += cs
-                row_sums.append(cs)
+                jj = s
+                rs = 0
+                for ii in range(-s, s+1):
+                    rs += matrix[(i+ii) % w][(j+jj) % h]
+                curr += rs
+                row_sums.append(rs)
 
             col.append(curr)
         values.append(col)
+
     return np.array(values)
 
 
@@ -53,15 +55,11 @@ def halite_density(game_map, params):
 
         all_halite.append(col)
 
-    logging.info(all_halite[8][31])
-    logging.info(all_halite[31][8])
-    logging.info(game_map[Position(8, 31)].halite_amount)
-    logging.info(game_map[Position(31, 8)].halite_amount)
     stored_density = toroidal_value_sum(all_halite, params.density_kernal_side_length)
     return stored_density
 
 
-def closest_dense_spot(ship, game_map, params, n=3):
+def closest_most_dense_spot(ship, game_map, params, n=3):
     """From the n most dense regions choose closest"""
     density = halite_density(game_map, params)
     ind = []
@@ -76,6 +74,38 @@ def closest_dense_spot(ship, game_map, params, n=3):
     pos = [Position(x[0], x[1]) for x in ind[:n]]
     dist = [game_map.calculate_distance(ship.position, x) for x in pos]
     dist, pos = list(zip(*sorted(zip(dist, pos), key=lambda x: x[0])))
+
+    return pos[0], dist[0]
+
+
+def closest_dense_spot(ship, game_map, params):
+    """Return the closest location which satisfies the
+    explore_dense_requirement."""
+    density = halite_density(game_map, params)
+    ind = []
+
+    for i in range(len(density)):
+        for j in range(len(density[0])):
+            if density[i][j] > params.explore_dense_requirement:
+                ind.append((i, j))
+
+    if len(ind) == 0:
+        logging.info("wtf")
+        return None, None
+
+    pos = [Position(x[0], x[1]) for x in ind]
+    dist = [game_map.calculate_distance(ship.position, x) for x in pos]
+    dist, pos = list(zip(*sorted(zip(dist, pos), key=lambda x: x[0])))
+
+
+    logging.info("params.minimum_useful_halite {}".format(params.minimum_useful_halite))
+    logging.info("params.explore_dense_requirement {}".format(params.explore_dense_requirement))
+    logging.info("Actual density of spot I am telling you to move {} at pos {}".format(density[pos[0].x][pos[0].y], pos[0]))
+
+    for i in range(-1, 2):
+        for j in range(-1, 2):
+            h = game_map[pos[0]+Position(i, j)].halite_amount
+            logging.info("actual halite at pos[0] + {}={}".format((i,j), h))
 
     return pos[0], dist[0]
 
