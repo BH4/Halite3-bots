@@ -51,7 +51,13 @@ def halite_density(game_map, params):
     for i in range(game_map.width):
         col = []
         for j in range(game_map.height):
-            col.append(game_map[Position(i, j)].halite_amount)
+            spot = game_map[Position(i, j)]
+            if spot.is_occupied:
+                h = 0
+            else:
+                h = spot.halite_amount
+
+            col.append(h)
 
         all_halite.append(col)
 
