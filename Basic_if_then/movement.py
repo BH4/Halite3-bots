@@ -319,3 +319,54 @@ def smart_explore(ship, game_map, params):
         logging.info("Ship {} decided there is plenty of halite here.".format(ship.id))
 
     return curr_pos
+
+
+def vacuum_explore(ship, game_map, params):
+    curr_pos = ship.position
+
+    minimum_useful_halite = constants.EXTRACT_RATIO*2
+    explore_density = minimum_useful_halite*params.density_kernal_side_length**2
+
+    # Don't move if there is enough halite here
+    if game_map[curr_pos].halite_amount < minimum_useful_halite:
+        logging.info("Ship {} decided there isn't enough halite here.".format(ship.id))
+
+        # Movement cost should always be zero.
+        logging.info("Ship {} is able to pay for movement.".format(ship.id))
+
+        spaces = helpers.get_spaces_in_region(ship, search_region=params.search_region)
+        # spaces = curr_pos.get_surrounding_cardinals()
+
+        # Don't set destination to be on top of another ship
+        # unless it is necessary.
+        new_spaces = []
+        for p in spaces:
+            if not game_map[p].is_occupied:
+                new_spaces.append(p)
+
+        if len(new_spaces) > 0:
+            spaces = new_spaces
+
+        # Don't move if nowhere else is safe
+        if len(spaces) > 0:
+            h_amount = [game_map[x].halite_amount for x in spaces]
+            # If none of the spaces have enough halite then move to a
+            # better area
+            if max(h_amount) < minimum_useful_halite:
+                logging.info("Moving to better area")
+                pos, dist = helpers.closest_dense_spot(ship, game_map, params, density_req=explore_density)
+                if dist == 0:
+                    logging.info("Moving to same location :/")
+
+                if pos is None:  # default to other method if none found over threshold
+                    pos, dist = helpers.closest_most_dense_spot(ship, game_map, params, n=params.number_of_dense_spots_to_check)
+                return pos
+
+
+            h_amount, spaces = list(zip(*sorted(zip(h_amount, spaces), key=lambda x: x[0], reverse=True)))
+            destination = spaces[0]
+            return destination
+    else:
+        logging.info("Ship {} decided there is plenty of halite here.".format(ship.id))
+
+    return curr_pos
