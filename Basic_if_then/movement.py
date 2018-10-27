@@ -189,7 +189,9 @@ def group_navigate_main(ship_list, game_map, priority_list, move_list):
         return move_test
 
     # Conflict resolution
-    new_move_list = {x: [y for y in move_list[x]] for x in move_list}
+    # Attempt resolution to one conflict at a time when all are solved a
+    # solution will be returned.
+
     for s in conflicting_positions:
         crashing_ships = position_test[s]
         priorities = [priority_list[x] for x in crashing_ships]
@@ -202,21 +204,27 @@ def group_navigate_main(ship_list, game_map, priority_list, move_list):
         # move then there is no solution.
         only_one_move = [i for i, x in enumerate(crashing_ships) if len(move_list[x]) == 1]
         if len(only_one_move) == 1:
-            ind = only_one_move[0]
+            inds = [only_one_move[0]]
         elif len(only_one_move) > 1:
             return None  # There are no solutions
         else:
-            mp = min(priorities)
-            ind = priorities.index(mp)
-        priorities.pop(ind)
-        crashing_ships.pop(ind)
+            inds, _ = list(zip(*sorted(zip(priorities, range(len(priorities))))))
 
-        # Keep the other crashing ships from moving here.
-        for i in range(len(priorities)):
-            shipid = crashing_ships[i]
-            new_move_list[shipid] = new_move_list[shipid][1:]
+        for ind in inds:
+            new_move_list = {x: [y for y in move_list[x]] for x in move_list}
 
-    return group_navigate_main(ship_list, game_map, priority_list, new_move_list)
+            # Keep the other crashing ships from moving here.
+            # Keep ship at ind the same.
+            for i in range(len(inds)):
+                if i != ind:
+                    shipid = crashing_ships[i]
+                    new_move_list[shipid] = new_move_list[shipid][1:]
+
+            solution = group_navigate_main(ship_list, game_map, priority_list, new_move_list)
+            if solution is not None:
+                return solution
+
+    return None  # failed to find any solutions
 
 
 def random_move(ship, game_map, params):
