@@ -15,26 +15,28 @@ def toroidal_value_sum(matrix, square_side_length):
         col = []
         row_sums = []
         for j in range(h):
+
             curr = 0
             if len(row_sums) == 0:
-                for ii in range(-s, s+1):
-                    cs = 0
-                    for jj in range(-s, s+1):
-                        cs += matrix[(i+ii) % w][(j+jj) % h]
-                    curr += cs
-                    row_sums.append(cs)
+                for jj in range(-s, s+1):
+                    rs = 0
+                    for ii in range(-s, s+1):
+                        rs += matrix[(i+ii) % w][(j+jj) % h]
+                    curr += rs
+                    row_sums.append(rs)
             else:
                 v = row_sums.pop(0)
                 curr = col[-1]-v
-                ii = s
-                cs = 0
-                for jj in range(-s, s+1):
-                    cs += matrix[(i+ii) % w][(j+jj) % h]
-                curr += cs
-                row_sums.append(cs)
+                jj = s
+                rs = 0
+                for ii in range(-s, s+1):
+                    rs += matrix[(i+ii) % w][(j+jj) % h]
+                curr += rs
+                row_sums.append(rs)
 
             col.append(curr)
         values.append(col)
+
     return np.array(values)
 
 
