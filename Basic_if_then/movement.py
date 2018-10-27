@@ -167,7 +167,10 @@ def group_navigate(game, ship_status, ship_destination):
 
     logging.info("group_navigate: Made priority_list.")
 
-    return group_navigate_main(me.get_ships(), game_map, priority_list, move_list)
+    solution = group_navigate_main(me.get_ships(), game_map, priority_list, move_list)
+    if solution is None:
+        logging.info("group_navigate: No solution")
+    return solution
 
 
 def group_navigate_main(ship_list, game_map, priority_list, move_list):
@@ -191,10 +194,14 @@ def group_navigate_main(ship_list, game_map, priority_list, move_list):
     # Conflict resolution
     # Attempt resolution to one conflict at a time when all are solved a
     # solution will be returned.
+    logging.info("group_navigate_main: "+str(conflicting_positions))
 
     for s in conflicting_positions:
+        logging.info("group_navigate_main: "+s)
         crashing_ships = position_test[s]
+        logging.info("group_navigate_main: "+str(crashing_ships))
         priorities = [priority_list[x] for x in crashing_ships]
+        logging.info("group_navigate_main: "+str(priorities))
 
         # Allow one ship to move to this position but no more.
         # If there are any that don't have the ability to move at all
@@ -203,19 +210,21 @@ def group_navigate_main(ship_list, game_map, priority_list, move_list):
         # have to go somewhere else. If there is more than one that can't
         # move then there is no solution.
         only_one_move = [i for i, x in enumerate(crashing_ships) if len(move_list[x]) == 1]
+        logging.info("group_navigate_main: "+str(only_one_move))
         if len(only_one_move) == 1:
-            inds = [only_one_move[0]]
+            sorted_inds = [only_one_move[0]]
         elif len(only_one_move) > 1:
             return None  # There are no solutions
         else:
-            inds, _ = list(zip(*sorted(zip(priorities, range(len(priorities))))))
+            _, sorted_inds = list(zip(*sorted(zip(priorities, range(len(priorities))))))
 
-        for ind in inds:
+        logging.info("group_navigate_main: "+str(sorted_inds))
+        for ind in sorted_inds:
             new_move_list = {x: [y for y in move_list[x]] for x in move_list}
 
             # Keep the other crashing ships from moving here.
             # Keep ship at ind the same.
-            for i in range(len(inds)):
+            for i in range(len(crashing_ships)):
                 if i != ind:
                     shipid = crashing_ships[i]
                     new_move_list[shipid] = new_move_list[shipid][1:]
