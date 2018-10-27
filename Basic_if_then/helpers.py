@@ -78,15 +78,18 @@ def closest_most_dense_spot(ship, game_map, params, n=3):
     return pos[0], dist[0]
 
 
-def closest_dense_spot(ship, game_map, params):
+def closest_dense_spot(ship, game_map, params, density_req=None):
     """Return the closest location which satisfies the
     explore_dense_requirement."""
+    if density_req is None:
+        density_req = params.explore_dense_requirement
+
     density = halite_density(game_map, params)
     ind = []
 
     for i in range(len(density)):
         for j in range(len(density[0])):
-            if density[i][j] > params.explore_dense_requirement:
+            if density[i][j] > density_req:
                 ind.append((i, j))
 
     if len(ind) == 0:
@@ -99,7 +102,7 @@ def closest_dense_spot(ship, game_map, params):
 
 
     logging.info("params.minimum_useful_halite {}".format(params.minimum_useful_halite))
-    logging.info("params.explore_dense_requirement {}".format(params.explore_dense_requirement))
+    logging.info("density_req {}".format(density_req))
     logging.info("Actual density of spot I am telling you to move {} at pos {}".format(density[pos[0].x][pos[0].y], pos[0]))
 
     for i in range(-1, 2):

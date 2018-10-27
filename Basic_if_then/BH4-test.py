@@ -5,6 +5,7 @@ import logging
 
 # Import my stuff
 import strategies
+import helpers
 
 
 game = hlt.Game()
@@ -44,4 +45,12 @@ logging.info("Successfully created bot! Player ID is {}.".format(game.my_id))
 
 # Game Loop
 while True:
-    strategies.expand(game, ship_status, ship_destination, params)
+    hd = helpers.halite_density(game.game_map, params)
+
+    m = max([max(x) for x in hd])
+
+    if m > params.explore_dense_requirement:
+        strategies.expand(game, ship_status, ship_destination, params)
+    else:
+        logging.info("Started vacuum")
+        strategies.vacuum(game, ship_status, ship_destination, params)
