@@ -300,7 +300,13 @@ def smart_explore(ship, game_map, params):
                 # If none of the spaces have enough halite then move to a
                 # better area
                 if max(h_amount) < params.minimum_useful_halite:
-                    pos, dist = helpers.closest_dense_spot(ship, game_map, params, n=params.number_of_dense_spots_to_check)
+                    logging.info("Moving to better area")
+                    pos, dist = helpers.closest_dense_spot(ship, game_map, params)
+                    if dist == 0:
+                        logging.info("Moving to same location :/")
+
+                    if pos is None:  # default to other method if none found over threshold
+                        pos, dist = helpers.closest_most_dense_spot(ship, game_map, params, n=params.number_of_dense_spots_to_check)
                     return pos
 
 
