@@ -91,7 +91,7 @@ def ship_spawn_checklist(game, ship_status, currently_occupied_positions, params
     else:
         sufficient_halite_to_build = me.halite_amount >= constants.SHIP_COST
 
-    need_ships = len(me.get_ships()) < params.max_ships
+    need_ships = num_ships < params.max_ships
     lots_of_halite = (me.halite_amount >
                       constants.DROPOFF_COST+constants.SHIP_COST)
 
