@@ -120,6 +120,7 @@ def expand(game, ship_status, ship_destination, params):
     # Ship spawn
     #######################################################################
     if checklists.ship_spawn_checklist(game, ship_status, currently_occupied_positions, params):
+        logging.info("Spawn ship.")
         command_queue.append(game.me.shipyard.spawn())
 
     #######################################################################

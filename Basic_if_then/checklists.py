@@ -21,6 +21,16 @@ def dropoff_checklist(game, ship, ship_status, params):
 
     not_enough_dropoffs = len(me.get_dropoffs()) < params.max_dropoffs
 
+    logging.info("dropoff_checklist: sufficent_num_ships {}".format(sufficent_num_ships))
+    logging.info("dropoff_checklist: real_dropoff_cost {}".format(real_dropoff_cost))
+    logging.info("dropoff_checklist: constants.DROPOFF_COST {}".format(constants.DROPOFF_COST))
+    logging.info("dropoff_checklist: game_map[ship.position].halite_amount {}".format(game_map[ship.position].halite_amount))
+    logging.info("dropoff_checklist: ship.halite_amount {}".format(ship.halite_amount))
+    logging.info("dropoff_checklist: sufficient_halite_to_build {}".format(sufficient_halite_to_build))
+    logging.info("dropoff_checklist: me.halite_amount {}".format(me.halite_amount))
+    logging.info("dropoff_checklist: not_end_game {}".format(not_end_game))
+    logging.info("dropoff_checklist: not_enough_dropoffs {}".format(not_enough_dropoffs))
+
     return (sufficent_num_ships and sufficient_halite_to_build
             and not_end_game and not_enough_dropoffs)
 
@@ -84,7 +94,7 @@ def ship_spawn_checklist(game, ship_status, currently_occupied_positions, params
     end_game = game.turn_number > params.turn_to_stop_spending
     low_ship_num = num_ships < params.min_ships
 
-    if "dropoff" in ship_status:
+    if "dropoff" in ship_status.values():
         sufficient_halite_to_build = (me.halite_amount >=
                                       constants.SHIP_COST
                                       + constants.DROPOFF_COST)
@@ -96,6 +106,17 @@ def ship_spawn_checklist(game, ship_status, currently_occupied_positions, params
                       constants.DROPOFF_COST+constants.SHIP_COST)
 
     not_busy = me.shipyard.position not in currently_occupied_positions
+
+
+    logging.info("ship_spawn_checklist: num ships {}".format(num_ships))
+    logging.info("ship_spawn_checklist: end_game {}".format(end_game))
+    logging.info("ship_spawn_checklist: low_ship_num {}".format(low_ship_num))
+    logging.info("ship_spawn_checklist: sufficient_halite_to_build {}".format(sufficient_halite_to_build))
+    logging.info("ship_spawn_checklist: me.halite_amount {}".format(me.halite_amount))
+    logging.info("ship_spawn_checklist: constants.SHIP_COST {}".format(constants.SHIP_COST))
+    logging.info("ship_spawn_checklist: constants.DROPOFF_COST {}".format(constants.DROPOFF_COST))
+    logging.info("ship_spawn_checklist: need_ships {}".format(need_ships))
+    logging.info("ship_spawn_checklist: not_busy {}".format(not_busy))
 
     return (sufficient_halite_to_build and not_busy and
             ((end_game and low_ship_num) or (not end_game and need_ships)))
