@@ -10,10 +10,12 @@ import movement
 
 
 num_dropoffs = 0
+crash_flag = False
 
 
 def expand(game, ship_status, ship_destination, params):
     global num_dropoffs
+    global crash_flag
 
     game.update_frame()
 
@@ -51,6 +53,8 @@ def expand(game, ship_status, ship_destination, params):
 
     # Ship loop
     for ship in me.get_ships():
+        closest, drop_dist = helpers.closest_drop(ship.position, me, game_map)
+
         # Pre-computed values for this ship
         if ship.id in ship_destination:
             dist = game_map.calculate_distance(ship.position, ship_destination[ship.id])
@@ -66,7 +70,10 @@ def expand(game, ship_status, ship_destination, params):
             ship_destination[ship.id] = ship.position
 
         # Status changes
-        if ship_status[ship.id] == "returning" and dist == 0:
+        if constants.MAX_TURNS-game.turn_number < drop_dist + params.crash_return_fudge:
+            ship_status[ship.id] = "returning"
+            crash_flag = True
+        elif ship_status[ship.id] == "returning" and dist == 0:
             ship_status[ship.id] = "exploring"
         elif ship_status[ship.id] == "exploring":
             if((ship.halite_amount >= params.sufficient_halite_for_droping and
@@ -99,7 +106,8 @@ def expand(game, ship_status, ship_destination, params):
     #######################################################################
     # Make move
     #######################################################################
-    move_dict = movement.group_navigate(game, ship_status, ship_destination)
+    move_dict = movement.group_navigate(game, ship_status, ship_destination, crash=crash_flag)
+
     currently_occupied_positions = []
     for ship in me.get_ships():
         if ship_status[ship.id] == "dropoff" and ship_destination[ship.id] == ship.position:

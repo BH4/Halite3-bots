@@ -24,7 +24,9 @@ class parameters():
         self.large_distance_from_drop = 10
         self.farthest_allowed_dropoff = game.game_map.width/2
         self.dropoff_dense_requirement = constants.DROPOFF_COST
+        self.max_dropoffs = 1
 
+        # Halite collection parameters
         self.minimum_useful_halite = constants.MAX_HALITE/10
         self.sufficient_halite_for_droping = constants.MAX_HALITE
         self.density_kernal_side_length = 3
@@ -33,8 +35,9 @@ class parameters():
 
         self.explore_dense_requirement = self.minimum_useful_halite*self.density_kernal_side_length**2
 
+        # Turn based parameters
         self.turn_to_stop_spending = 300
-        self.max_dropoffs = 1
+        self.crash_return_fudge = 10  # constants.MAX_TURNS - game.game_map.width/2
 
 
 params = parameters()

@@ -107,7 +107,6 @@ def ship_spawn_checklist(game, ship_status, currently_occupied_positions, params
 
     not_busy = me.shipyard.position not in currently_occupied_positions
 
-
     logging.info("ship_spawn_checklist: num ships {}".format(num_ships))
     logging.info("ship_spawn_checklist: end_game {}".format(end_game))
     logging.info("ship_spawn_checklist: low_ship_num {}".format(low_ship_num))
@@ -119,4 +118,4 @@ def ship_spawn_checklist(game, ship_status, currently_occupied_positions, params
     logging.info("ship_spawn_checklist: not_busy {}".format(not_busy))
 
     return (sufficient_halite_to_build and not_busy and
-            ((end_game and low_ship_num) or (not end_game and need_ships)))
+            ((end_game and low_ship_num) or (not end_game and (need_ships))))  # or lots_of_halite))))

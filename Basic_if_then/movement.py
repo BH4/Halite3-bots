@@ -129,7 +129,7 @@ def navigate(game_map, ship, destination):
     return possible_moves
 
 
-def group_navigate(game, ship_status, ship_destination):
+def group_navigate(game, ship_status, ship_destination, crash=False):
     me = game.me
     game_map = game.game_map
 
@@ -167,13 +167,16 @@ def group_navigate(game, ship_status, ship_destination):
 
     logging.info("group_navigate: Made priority_list.")
 
-    solution = group_navigate_main(me.get_ships(), game_map, priority_list, move_list)
+    solution = group_navigate_main(me.get_ships(), game, priority_list, move_list, crash)
     if solution is None:
         logging.info("group_navigate: No solution")
     return solution
 
 
-def group_navigate_main(ship_list, game_map, priority_list, move_list):
+def group_navigate_main(ship_list, game, priority_list, move_list, crash):
+    me = game.me
+    game_map = game.game_map
+
     logging.info("group_navigate_main: "+str(move_list))
     conflicting_positions = set()
 
@@ -186,6 +189,16 @@ def group_navigate_main(ship_list, game_map, priority_list, move_list):
             position_test[s].append(ship.id)
         else:
             position_test[s] = [ship.id]
+
+    if crash:
+        drop_s = str(me.shipyard.position)
+        if drop_s in conflicting_positions:
+            conflicting_positions.remove(drop_s)
+        for drop in me.get_dropoffs():
+            drop_s = str(drop.position)
+            if drop_s in conflicting_positions:
+                conflicting_positions.remove(drop_s)
+
 
     # Solution is acceptable
     if len(conflicting_positions) == 0:
@@ -229,7 +242,7 @@ def group_navigate_main(ship_list, game_map, priority_list, move_list):
                     shipid = crashing_ships[i]
                     new_move_list[shipid] = new_move_list[shipid][1:]
 
-            solution = group_navigate_main(ship_list, game_map, priority_list, new_move_list)
+            solution = group_navigate_main(ship_list, game, priority_list, new_move_list, crash)
             if solution is not None:
                 return solution
 
@@ -269,9 +282,6 @@ def returning_move(ship, me, game_map):
 
 
 def smart_explore(ship, game_map, params):
-    #if random.random() < .5:
-    #    logging.info("Randomly chose to vacuum.")
-    #    return vacuum_explore(ship, game_map, params)
 
     curr_pos = ship.position
 
